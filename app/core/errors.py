@@ -46,7 +46,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def handle_app_error(request: Request, exc: AppError) -> JSONResponse:
         logger.info(
             "app_error",
-            extra={"path": request.url.path, "code": exc.code, "message": exc.message},
+            extra={"path": request.url.path, "code": exc.code, "detail": exc.message},
         )
         return JSONResponse(status_code=exc.status_code, content=error_body(exc.message))
 
