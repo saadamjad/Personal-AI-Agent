@@ -1,0 +1,117 @@
+# NOTE: some ranges below overlap as originally exported from LinkedIn (e.g. Retailo,
+# Hao Saudi, Sitgo, and TekRevol all cluster around 2020-2023). Saad confirmed he will
+# send corrected, non-overlapping dates — until then, treat these dates as provisional
+# and do not let the agent assert exact overlapping claims as fact.
+
+positions:
+  - company: ZIZKA AI S.L
+    role: Founding Engineer
+    employment_type: Full-time
+    start: "2026-06"
+    end: present
+    location: Remote
+    summary: >
+      Founding engineer helping build ZizkaDB, an open-source operational database
+      designed for AI agents. Involved in architecting and building both frontend
+      and backend systems.
+
+  - company: Washmen
+    role: Software Engineer, Customer App
+    employment_type: Full-time
+    start: "2023-09"
+    end: "2026-07"
+    location: Dubai, United Arab Emirates (Remote)
+    summary: >
+      Software engineer focused on the customer domain at Washmen, the UAE's
+      laundry platform with 1M+ active users. Delivered end-to-end features
+      across web, mobile, and backend systems.
+    responsibilities:
+      - Developed and maintained Progressive Web Apps (PWAs) and mobile platforms for
+        partners including Careem and InstaShop, improving performance and reliability
+      - Designed and implemented scalable backend services and APIs using a
+        microservices architecture (AWS Lambda, SQS, SNS)
+      - Delivered full-stack features across frontend and backend for a seamless
+        user experience
+      - Enhanced mobile app performance, debugging, and monitoring using
+        CloudWatch, Sentry, and Reactotron
+      - Integrated analytics/tracking tools (Mixpanel, Firebase, Google Analytics, Hotjar)
+        to inform data-driven decisions
+      - Implemented event-driven architecture for asynchronous, scalable systems
+      - Collaborated with product, CX, and analytics teams to resolve real-time
+        customer queries and implement improvements
+      - Used Test-Driven Development (TDD) and Feature-Driven Development (FDD)
+      - Followed Agile methodologies for delivery and production deployment
+      - Implemented internationalization (i18next, Locize) for global-ready applications
+
+  - company: TekRevol
+    role: React Native Engineer (Contract)
+    employment_type: Contract
+    start: "2023-03"
+    end: "2023-08"
+    location: Remote
+    summary: >
+      Delivered mobile features for Android & iOS using React Native, TypeScript,
+      and JavaScript, working on scalable, production-grade mobile apps.
+
+  - company: Retailo Technologies
+    role: Software Engineer (React Native, React.js)
+    employment_type: Full-time
+    start: "2022-01"
+    end: "2023-04"
+    location: Riyadh, Saudi Arabia (Remote)
+    summary: >
+      Retailo is a B2B marketplace startup in the MENAP region. Built frontend
+      features for B2B marketplace applications using React.js and React Native.
+    responsibilities:
+      - Implemented APIs, Redux, Redux-Thunk, and Redux-Saga for seamless data flow
+      - Worked on admin panels using React.js and Angular
+    projects:
+      - name: Retailo Consumer App
+        description: >
+          Online regional B2B marketplace platform serving small and medium-sized
+          retail businesses.
+        link: https://play.google.com/store/apps/details?id=com.app.retailerapp
+      - name: Retailo-Go App
+        description: >
+          Multipurpose mobile app used for order-booking, cash collection, and
+          delivering goods by Retailo's agents.
+        link: https://play.google.com/store/apps/details?id=com.app.retailogo
+
+  - company: Hao Saudi
+    role: Software Engineer / React Native Developer
+    employment_type: Full-time then Part-time
+    start: "2020-01"
+    end: "2022-01"
+    location: Riyadh, Saudi Arabia (Remote)
+    summary: >
+      Owned the full product lifecycle from MVP to App Store and Google Play
+      release with a small frontend team. Maintained a 99.2% crash-free session
+      rate over 2+ years through proactive monitoring and bug triage.
+
+  - company: Sitgo Travels
+    role: Software Engineer (React Native, React.js)
+    employment_type: Full-time
+    start: "2020-01"
+    end: "2022-01"
+    location: Karachi, Pakistan (On-site)
+    summary: >
+      Developed mobile and web features using React Native (Expo and CLI) and
+      TypeScript, with experience in the mobile app publication process.
+      Implemented functional components, hooks, and HOC patterns for scalable
+      frontend architecture.
+    projects:
+      - name: Sitgo App
+        link: https://apps.apple.com/pk/app/sitgo/id1514579305
+
+  - company: Fiverr
+    role: Freelance React Native Developer (Level 1 Seller)
+    employment_type: Freelance
+    start: "2019-01"
+    end: "2020-12"
+    location: Remote
+    summary: >
+      Delivered custom React Native mobile apps for diverse clients as a Level 1
+      seller, gaining experience across multiple industries.
+    projects:
+      - name: TheGestor Contabilidad
+        description: E-commerce/accounting mobile app built for a Fiverr client.
