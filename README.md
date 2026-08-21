@@ -1,5 +1,7 @@
 # portfolio-agent
 
+[![CI](https://github.com/saadamjad/Personal-AI-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/saadamjad/Personal-AI-Agent/actions/workflows/ci.yml)
+
 A personal AI representative for [saadstack.com](https://saadstack.com) — answers
 questions from recruiters, hiring managers, and clients about Saad's professional
 background, using a CrewAI agent grounded in a plain-text knowledge base.
