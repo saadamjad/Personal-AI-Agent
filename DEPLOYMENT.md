@@ -20,7 +20,7 @@
 
 ## Deploying
 
-Push to `main` — Railway rebuilds and redeploys automatically. There's no staging
+Push to `master` — Railway rebuilds and redeploys automatically. There's no staging
 environment for this project (confirmed decision — solo project, test locally first).
 
 ## Verifying a deploy
