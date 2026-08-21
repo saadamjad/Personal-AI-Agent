@@ -42,19 +42,37 @@ Knowledge files (app/knowledge/*.md, *.yaml)
 
 ## Request lifecycle
 
-1. `RequestIdMiddleware` stamps every request with a UUID (returned as `X-Request-ID`,
+Middleware wraps outside-in as: CORS → RequestId → BodySizeLimit → routes (CORS is
+added *last* in `main.py` since Starlette makes the last-added middleware outermost —
+it has to wrap everything, including BodySizeLimit's early rejections, or the browser
+discards those error responses as cross-origin failures instead of showing the 413).
+
+1. `CORSMiddleware` adds CORS headers to whatever comes back, whichever layer produced it.
+2. `RequestIdMiddleware` stamps every request with a UUID (returned as `X-Request-ID`,
    used to correlate logs).
-2. `BodySizeLimitMiddleware` rejects oversized bodies before they're parsed.
-3. `ChatService.check_rate_limits` enforces per-session and per-IP sliding-window limits.
-4. `ChatService.handle_turn`:
+3. `BodySizeLimitMiddleware` rejects oversized bodies before they're parsed.
+4. `ChatService.check_rate_limits` enforces per-session and per-IP sliding-window limits.
+5. `ChatService.handle_turn` (route handlers are plain `def`, not `async def`, so
+   FastAPI runs them in its threadpool — the blocking CrewAI call doesn't stall the
+   event loop for other requests, including health checks):
    - validates message length
    - runs `services/moderation.py` — jailbreak/abuse/greeting/thanks/gibberish are
      short-circuited with a canned reply *before* any LLM call
-   - checks the daily LLM call budget (`services/rate_limiter.py`'s `DailyCallBudget`)
-   - calls `ChatFlow` if configured and under budget, otherwise returns a fallback reply
+   - checks the daily LLM call budget (`storage/conversation_store.py`'s
+     `check_and_record_llm_call`, persisted in SQLite so it survives redeploys)
+   - calls `ChatFlow` if configured and under budget, bounded by
+     `CHAT_FLOW_TIMEOUT_SECONDS` via a `ThreadPoolExecutor` future — otherwise returns
+     a fallback reply
    - persists both turns to `storage/conversation_store.py` (SQLite)
-5. Any unhandled exception is caught by `core/errors.py`'s global handler and turned
-   into a generic error body — no stack traces ever reach the client.
+6. Any unhandled exception is caught by `core/errors.py`'s global handler and turned
+   into a generic `{"error": "<message>"}` body — no stack traces ever reach the client.
+
+## API wire format
+
+Request/response JSON is camelCase (`sessionId`, `messageId`, …) to match the
+website's existing `chatApi.js`/`useChatMessages.js` — the schemas in
+`app/schemas/chat.py` use `alias_generator=to_camel` so Python stays snake_case
+internally while the wire format doesn't change the frontend at all.
 
 ## Storage
 
@@ -62,8 +80,9 @@ SQLite via a single file (`DATABASE_PATH`, mounted on a Railway volume in produc
 Chosen over Postgres/Redis because this is single-instance, low-QPS, personal-scale
 traffic — SQLite gives durability across redeploys with zero extra infrastructure.
 `ConversationStore`'s interface (`save_message`, `get_recent_messages`,
-`count_llm_calls_since`) can be swapped to a different backend later without touching
-callers.
+`check_and_record_llm_call`) can be swapped to a different backend later without
+touching callers. A per-instance write lock keeps sequence-numbering and budget
+check-then-record atomic across concurrent request-handling threads.
 
 ## Deliberately out of scope for v1
 

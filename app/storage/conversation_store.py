@@ -1,4 +1,5 @@
 import sqlite3
+import threading
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -42,6 +43,10 @@ class ConversationStore:
         db_path = Path(settings.database_path)
         db_path.parent.mkdir(parents=True, exist_ok=True)
         self._db_path = str(db_path)
+        # SQLite serializes writes at the file level, but a check-then-write
+        # sequence (next seq, daily budget count) still needs an in-process
+        # lock to stay atomic across concurrent request-handling threads.
+        self._write_lock = threading.Lock()
         with self._connect() as conn:
             conn.executescript(_SCHEMA)
 
@@ -62,7 +67,7 @@ class ConversationStore:
         return int(row[0]) + 1
 
     def save_message(self, session_id: str, role: str, content: str) -> StoredMessage:
-        with self._connect() as conn:
+        with self._write_lock, self._connect() as conn:
             seq = self.next_seq(conn, session_id)
             now = datetime.now(UTC)
             msg = StoredMessage(
@@ -100,17 +105,19 @@ class ConversationStore:
         ]
         return list(reversed(messages))
 
-    def record_llm_call(self) -> None:
-        with self._connect() as conn:
+    def check_and_record_llm_call(self, max_calls_per_day: int) -> bool:
+        """Atomically checks the rolling 24h LLM call count against the daily
+        cap and records this call if under budget. Persisted in SQLite (not
+        in-memory) so the cap survives process restarts/redeploys."""
+        cutoff = (datetime.now(UTC) - timedelta(hours=24)).isoformat()
+        with self._write_lock, self._connect() as conn:
+            row = conn.execute(
+                "SELECT COUNT(*) FROM llm_call_log WHERE called_at >= ?", (cutoff,)
+            ).fetchone()
+            if int(row[0]) >= max_calls_per_day:
+                return False
             conn.execute(
                 "INSERT INTO llm_call_log (called_at) VALUES (?)",
                 (datetime.now(UTC).isoformat(),),
             )
-
-    def count_llm_calls_since(self, seconds_ago: int) -> int:
-        cutoff = (datetime.now(UTC) - timedelta(seconds=seconds_ago)).isoformat()
-        with self._connect() as conn:
-            row = conn.execute(
-                "SELECT COUNT(*) FROM llm_call_log WHERE called_at >= ?", (cutoff,)
-            ).fetchone()
-        return int(row[0])
+            return True

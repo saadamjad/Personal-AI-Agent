@@ -6,6 +6,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from app.core.config import get_settings
+from app.core.errors import error_body
 from app.core.logging import get_logger, request_id_ctx
 
 logger = get_logger(__name__)
@@ -41,11 +42,6 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
         if content_length is not None and int(content_length) > settings.chat_max_body_bytes:
             return JSONResponse(
                 status_code=413,
-                content={
-                    "error": {
-                        "code": "REQUEST_TOO_LARGE",
-                        "message": "Request body exceeds the allowed size.",
-                    }
-                },
+                content=error_body("Request body exceeds the allowed size."),
             )
         return await call_next(request)

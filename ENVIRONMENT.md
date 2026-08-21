@@ -7,6 +7,8 @@ invalid combinations at startup). Copy `.env.example` to `.env` for local dev.
 |---|---|---|
 | `ENVIRONMENT` | `development` | `development` or `production` |
 | `PORT` | `8000` | Railway overrides this automatically — don't hardcode |
+| `CREWAI_DISABLE_TELEMETRY` | `true` | Stops CrewAI's import-time network call to telemetry.crewai.com |
+| `OTEL_SDK_DISABLED` | `true` | Same purpose, belt-and-suspenders with the above |
 | `OPENAI_API_KEY` | *(empty)* | Set this or `ANTHROPIC_API_KEY` |
 | `OPENAI_MODEL` | `gpt-4o-mini` | |
 | `ANTHROPIC_API_KEY` | *(empty)* | Alternative to OpenAI |
@@ -15,7 +17,7 @@ invalid combinations at startup). Copy `.env.example` to `.env` for local dev.
 | `CHAT_MAX_LLM_CALLS_PER_DAY` | `300` | Daily ceiling on real LLM calls, independent of rate limiting |
 | `CHAT_MAX_MESSAGE_LENGTH` | `2000` | Characters |
 | `CHAT_MAX_BODY_BYTES` | `8192` | Enforced by `BodySizeLimitMiddleware` before JSON parsing |
-| `CHAT_FLOW_TIMEOUT_SECONDS` | `25` | Target for the flow execution timeout (see SECURITY.md known gaps) |
+| `CHAT_FLOW_TIMEOUT_SECONDS` | `25` | Enforced flow execution timeout — see SECURITY.md |
 | `RATE_LIMIT_PER_SESSION_PER_10MIN` | `20` | |
 | `RATE_LIMIT_PER_IP_PER_10MIN` | `40` | |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | Comma-separated. **Set to the production domain in Railway — no wildcard.** |

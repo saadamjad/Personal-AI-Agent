@@ -1,3 +1,12 @@
+import os
+
+# Must run before crewai is imported anywhere in the dependency chain below —
+# otherwise it tries to phone home to telemetry.crewai.com at import/execution
+# time, adding an unnecessary external dependency to startup/request reliability
+# (and sending data to a third party without explicit opt-in).
+os.environ.setdefault("CREWAI_DISABLE_TELEMETRY", "true")
+os.environ.setdefault("OTEL_SDK_DISABLED", "true")
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,14 +24,19 @@ def create_app() -> FastAPI:
 
     app = FastAPI(title="Portfolio Agent", version="0.1.0")
 
+    # Middleware order matters: Starlette wraps the LAST-added middleware as
+    # OUTERMOST. CORS must be outermost so its headers land on every response,
+    # including ones BodySizeLimitMiddleware rejects before reaching the route
+    # — otherwise the browser discards the error body as a cross-origin
+    # failure instead of surfacing the actual 413. Add in inner-to-outer order.
+    app.add_middleware(BodySizeLimitMiddleware)
+    app.add_middleware(RequestIdMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],
     )
-    app.add_middleware(BodySizeLimitMiddleware)
-    app.add_middleware(RequestIdMiddleware)
 
     register_exception_handlers(app)
 

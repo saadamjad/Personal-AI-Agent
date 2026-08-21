@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -7,7 +9,7 @@ from app.core.logging import get_logger
 from app.flows.chat_flow import run_chat_flow
 from app.schemas.chat import ChatMessage
 from app.services.moderation import classify_message
-from app.services.rate_limiter import DailyCallBudget, SlidingWindowRateLimiter
+from app.services.rate_limiter import SlidingWindowRateLimiter
 from app.storage.conversation_store import ConversationStore
 
 
@@ -17,6 +19,7 @@ class ChatTurnResult:
     message_id: str
     created_at: datetime
     simulated: bool
+
 
 logger = get_logger(__name__)
 
@@ -34,7 +37,10 @@ class ChatService:
             settings.rate_limit_per_session_per_10min
         )
         self._ip_limiter = SlidingWindowRateLimiter(settings.rate_limit_per_ip_per_10min)
-        self._budget = DailyCallBudget(settings.chat_max_llm_calls_per_day)
+        # Single-worker executor so a slow/hung LLM call can be bounded by
+        # chat_flow_timeout_seconds without blocking the caller's thread
+        # indefinitely (CrewAI's flow.kickoff() is a blocking call).
+        self._flow_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="chat-flow")
 
     def check_rate_limits(self, session_id: str, client_ip: str) -> None:
         if not self._session_limiter.check(session_id):
@@ -66,7 +72,8 @@ class ChatService:
         history = self._store.get_recent_messages(session_id, limit=12)
         history_text = "\n".join(f"{m.role}: {m.content}" for m in history if m.id != user_msg.id)
 
-        if not self._settings.llm_configured or not self._budget.check_and_record():
+        budget_ok = self._store.check_and_record_llm_call(self._settings.chat_max_llm_calls_per_day)
+        if not self._settings.llm_configured or not budget_ok:
             logger.warning(
                 "llm_fallback",
                 extra={"llm_configured": self._settings.llm_configured, "session_id": session_id},
@@ -74,12 +81,8 @@ class ChatService:
             reply = _FALLBACK_REPLY
             simulated = True
         else:
-            try:
-                reply = run_chat_flow(self._settings, session_id, trimmed, history_text)
-                simulated = False
-            except Exception as exc:
-                logger.exception("chat_flow_failed", extra={"session_id": session_id})
-                raise FlowExecutionError("The agent is temporarily unavailable.") from exc
+            reply = self._run_flow_with_timeout(session_id, trimmed, history_text)
+            simulated = False
 
         assistant_msg = self._store.save_message(session_id, "assistant", reply)
         return ChatTurnResult(
@@ -89,9 +92,22 @@ class ChatService:
             simulated=simulated,
         )
 
+    def _run_flow_with_timeout(self, session_id: str, message: str, history_text: str) -> str:
+        future = self._flow_executor.submit(
+            run_chat_flow, self._settings, session_id, message, history_text
+        )
+        try:
+            return future.result(timeout=self._settings.chat_flow_timeout_seconds)
+        except FutureTimeoutError as exc:
+            logger.warning("chat_flow_timeout", extra={"session_id": session_id})
+            raise FlowExecutionError("The agent took too long to respond.") from exc
+        except Exception as exc:
+            logger.exception("chat_flow_failed", extra={"session_id": session_id})
+            raise FlowExecutionError("The agent is temporarily unavailable.") from exc
+
     def get_history(self, session_id: str, limit: int) -> list[ChatMessage]:
         messages = self._store.get_recent_messages(session_id, limit=limit)
         return [
-            ChatMessage(role=m.role, content=m.content, created_at=m.created_at, seq=m.seq)
+            ChatMessage(id=m.id, role=m.role, content=m.content, timestamp=m.created_at, seq=m.seq)
             for m in messages
         ]

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from app.core.logging import get_logger, request_id_ctx
+from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -27,32 +27,33 @@ class RateLimitError(AppError):
     code = "RATE_LIMITED"
 
 
-class RequestTooLargeError(AppError):
-    status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
-    code = "REQUEST_TOO_LARGE"
-
-
 class FlowExecutionError(AppError):
     status_code = status.HTTP_502_BAD_GATEWAY
     code = "AGENT_UNAVAILABLE"
 
 
-def _error_body(code: str, message: str) -> dict[str, object]:
-    return {"error": {"code": code, "message": message, "request_id": request_id_ctx.get()}}
+def error_body(message: str) -> dict[str, object]:
+    """Client-facing error shape: {"error": "<message>"} — matches what the
+    website's chatApi.js expects to parse. The error `code` and request ID
+    are not part of this body; they're logged server-side (code via the
+    logger call sites) and the request ID travels in the X-Request-ID
+    response header instead, so nothing observability-relevant is lost."""
+    return {"error": message}
 
 
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def handle_app_error(request: Request, exc: AppError) -> JSONResponse:
-        return JSONResponse(
-            status_code=exc.status_code,
-            content=_error_body(exc.code, exc.message),
+        logger.info(
+            "app_error",
+            extra={"path": request.url.path, "code": exc.code, "message": exc.message},
         )
+        return JSONResponse(status_code=exc.status_code, content=error_body(exc.message))
 
     @app.exception_handler(Exception)
     async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
         logger.exception("Unhandled exception", extra={"path": request.url.path})
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=_error_body("INTERNAL_ERROR", "Something went wrong. Please try again."),
+            content=error_body("Something went wrong. Please try again."),
         )

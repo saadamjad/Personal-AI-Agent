@@ -24,17 +24,24 @@ accepted, documented tradeoff at this scale, not an oversight.
 - In-memory sliding window (`app/services/rate_limiter.py`). This is fine at
   single-instance Railway scale; a multi-instance deployment would need a shared
   backend (Redis) since each instance currently tracks its own counters.
-- A separate daily LLM call budget (`DailyCallBudget`, default 300/day) is a cost
-  backstop independent of per-key rate limiting.
+- A separate daily LLM call budget (`ConversationStore.check_and_record_llm_call`,
+  default 300/day) is a cost backstop independent of per-key rate limiting —
+  persisted in SQLite so it survives redeploys, not just an in-memory counter.
+- Client IP for per-IP limiting comes from `X-Forwarded-For`'s *last* hop (the value
+  Railway's edge proxy appends), not the first — the first entry is client-controlled
+  and trivially spoofable.
 
 ## Request limits
 
 - Max body size: 8KB (`BodySizeLimitMiddleware`, checked before JSON parsing)
 - Max message length: 2000 characters (enforced both in the Pydantic schema and in
   `ChatService.handle_turn`)
-- Flow execution timeout: not yet wall-clock enforced at the asyncio level — CrewAI's
-  own `max_iter` cap (6) on the agent bounds tool-calling loops. A hard request timeout
-  is a near-term hardening item — track it before increasing traffic expectations.
+- Flow execution timeout: `CHAT_FLOW_TIMEOUT_SECONDS` (default 25) is enforced via a
+  bounded `ThreadPoolExecutor` future in `ChatService._run_flow_with_timeout` — a slow
+  or hung LLM call returns a fallback reply to the caller within that bound, on top of
+  CrewAI's own `max_iter` cap (6) bounding tool-calling loops. Note this bounds the
+  *response*, not the underlying thread — a timed-out call keeps running in the
+  background until it naturally completes/errors; there's no true cancellation.
 
 ## Secrets
 
@@ -52,8 +59,10 @@ accepted, documented tradeoff at this scale, not an oversight.
 
 `app/core/errors.py` registers a global exception handler: every unhandled exception
 is logged in full (with request ID) server-side, and the client only ever sees
-`{"error": {"code": ..., "message": ..., "request_id": ...}}` — no stack traces, no
-internal paths, no library error messages.
+`{"error": "<message>"}` — no stack traces, no internal paths, no library error
+messages. The request ID isn't in the body (kept minimal to match the frontend's
+error-parsing contract) but travels in the `X-Request-ID` response header, and the
+error `code` is always in the server-side log line for cross-referencing.
 
 ## CORS
 
@@ -61,10 +70,19 @@ Locked to explicit origins via `CORS_ALLOWED_ORIGINS` (comma-separated) — no w
 Set this to the production portfolio domain in Railway; keep `localhost` origins out
 of the production env var.
 
+## CrewAI telemetry
+
+CrewAI phones home to `telemetry.crewai.com` at import/execution time by default.
+Disabled two ways for defense-in-depth: `CREWAI_DISABLE_TELEMETRY=true` and
+`OTEL_SDK_DISABLED=true` are set programmatically at the top of `app/main.py`
+(before crewai is ever imported) and also in the Dockerfile/`.env.example`. This
+avoids an unnecessary external dependency on every request and avoids sending
+conversation-adjacent data to a third party without explicit opt-in.
+
 ## Known gaps / near-term hardening
 
-- No hard wall-clock timeout wrapping `ChatFlow.kickoff` yet (relies on CrewAI's
-  `max_iter` + provider-side timeouts).
 - No WAF/bot-detection layer in front of the service (relies on rate limiting alone).
 - No authenticated admin surface exists (`CHAT_ADMIN_SECRET` and the old "teach" flow
   were deliberately dropped, not ported — see git history of the old repo).
+- A timed-out flow execution (see Request limits above) can't be truly cancelled —
+  the background thread keeps running until the LLM call itself resolves.

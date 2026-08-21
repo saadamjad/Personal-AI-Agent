@@ -10,7 +10,7 @@ router = APIRouter(tags=["chat"])
 
 
 @router.post("/chat", response_model=ChatResponse)
-async def post_chat(
+def post_chat(
     body: ChatRequest,
     client_ip: str = Depends(get_client_ip),
     service: ChatService = Depends(get_chat_service),
@@ -28,8 +28,8 @@ async def post_chat(
 
 
 @router.get("/chat/history", response_model=ChatHistoryResponse)
-async def get_chat_history(
-    session_id: UUID,
+def get_chat_history(
+    session_id: UUID = Query(alias="sessionId"),
     limit: int = Query(default=20, ge=1, le=100),
     service: ChatService = Depends(get_chat_service),
 ) -> ChatHistoryResponse:
