@@ -89,6 +89,14 @@ need to guarantee requests only originate from your own website, put a reverse p
 edge function in front of this service that injects a server-held secret — don't put that
 secret in browser code.
 
+## Response headers
+
+`SecurityHeadersMiddleware` (`app/core/middleware.py`) adds `X-Content-Type-Options:
+nosniff` and `Referrer-Policy: no-referrer-when-downgrade` to every response. This is a
+pure JSON API with no HTML responses, so the actual risk these mitigate is low — added
+as free, standard-practice defense-in-depth rather than in response to a specific
+threat.
+
 ## CrewAI telemetry
 
 CrewAI phones home to `telemetry.crewai.com` at import/execution time by default.

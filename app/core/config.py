@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     # Identity — who the agent represents. Drives the system prompt and the
     # fallback reply shown when the LLM is unreachable/unconfigured. Change
     # these (and app/knowledge/*) to turn this into your own agent.
-    agent_owner_name: str = "Saad"
+    agent_owner_name: str = Field(default="Saad", min_length=1)
     agent_contact_email: str | None = None
 
     # LLM provider

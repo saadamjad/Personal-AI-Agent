@@ -40,3 +40,13 @@ def test_cors_origins_list_splits_and_strips() -> None:
         openai_api_key="sk-test",
     )
     assert settings.cors_origins_list == ["https://a.com", "https://b.com", "https://c.com"]
+
+
+def test_agent_owner_name_rejects_blank() -> None:
+    with pytest.raises(ValidationError):
+        Settings(agent_owner_name="", openai_api_key="sk-test")
+
+
+def test_agent_owner_name_accepts_custom_value() -> None:
+    settings = Settings(agent_owner_name="Alex", openai_api_key="sk-test")
+    assert settings.agent_owner_name == "Alex"

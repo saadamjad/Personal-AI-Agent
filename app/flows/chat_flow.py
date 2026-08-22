@@ -32,7 +32,7 @@ class ChatFlow(Flow[ChatFlowState]):
     @start()
     def answer(self) -> str:
         agent = build_qa_agent(self._settings)
-        task = build_qa_task(agent)
+        task = build_qa_task(agent, self._settings.agent_owner_name)
         crew = Crew(agents=[agent], tasks=[task], process=Process.sequential, verbose=False)
         result = cast(
             CrewOutput,

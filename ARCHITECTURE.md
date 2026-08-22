@@ -32,7 +32,7 @@ Knowledge files (app/knowledge/*.md, *.yaml)
   exactly one agent and one task. Adding a router agent, a knowledge specialist, or a
   lead-qualification agent later means editing `chat_flow.py` — the service layer and
   the API contract don't change.
-- **`knowledge/` is plain markdown/YAML, not Python.** Updating Saad's bio, adding a
+- **`knowledge/` is plain markdown/YAML, not Python.** Updating the bio, adding a
   new project, or correcting a job title is a content edit + redeploy, never a code
   change.
 - **No vector database.** The knowledge base is small (a handful of short files), so
@@ -42,17 +42,22 @@ Knowledge files (app/knowledge/*.md, *.yaml)
 
 ## Request lifecycle
 
-Middleware wraps outside-in as: CORS → RequestId → BodySizeLimit → routes (CORS is
-added *last* in `main.py` since Starlette makes the last-added middleware outermost —
-it has to wrap everything, including BodySizeLimit's early rejections, or the browser
-discards those error responses as cross-origin failures instead of showing the 413).
+Middleware wraps outside-in as: CORS → SecurityHeaders → RequestId → BodySizeLimit →
+routes. Added in the reverse order in `main.py` (`BodySizeLimit`, `RequestId`,
+`SecurityHeaders`, then `CORS` last) since Starlette makes the last-added middleware
+outermost — CORS has to wrap everything, including BodySizeLimit's early rejections,
+or the browser discards those error responses as cross-origin failures instead of
+showing the 413.
 
 1. `CORSMiddleware` adds CORS headers to whatever comes back, whichever layer produced it.
-2. `RequestIdMiddleware` stamps every request with a UUID (returned as `X-Request-ID`,
+2. `SecurityHeadersMiddleware` (`core/middleware.py`) adds baseline headers
+   (`X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer-when-downgrade`)
+   to every response — low-stakes for a pure JSON API, but free defense-in-depth.
+3. `RequestIdMiddleware` stamps every request with a UUID (returned as `X-Request-ID`,
    used to correlate logs).
-3. `BodySizeLimitMiddleware` rejects oversized bodies before they're parsed.
-4. `ChatService.check_rate_limits` enforces per-session and per-IP sliding-window limits.
-5. `ChatService.handle_turn` (route handlers are plain `def`, not `async def`, so
+4. `BodySizeLimitMiddleware` rejects oversized bodies before they're parsed.
+5. `ChatService.check_rate_limits` enforces per-session and per-IP sliding-window limits.
+6. `ChatService.handle_turn` (route handlers are plain `def`, not `async def`, so
    FastAPI runs them in its threadpool — the blocking CrewAI call doesn't stall the
    event loop for other requests, including health checks):
    - validates message length
@@ -64,7 +69,7 @@ discards those error responses as cross-origin failures instead of showing the 4
      `CHAT_FLOW_TIMEOUT_SECONDS` via a `ThreadPoolExecutor` future — otherwise returns
      a fallback reply
    - persists both turns to `storage/conversation_store.py` (SQLite)
-6. Any unhandled exception is caught by `core/errors.py`'s global handler and turned
+7. Any unhandled exception is caught by `core/errors.py`'s global handler and turned
    into a generic `{"error": "<message>"}` body — no stack traces ever reach the client.
 
 ## API wire format

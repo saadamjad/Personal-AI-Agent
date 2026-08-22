@@ -52,12 +52,12 @@ def _looks_like_gibberish(text: str) -> bool:
     return vowels == 0 and len(letters) >= _GIBBERISH_MIN_LENGTH
 
 
-def classify_message(text: str) -> ModerationResult:
+def classify_message(text: str, owner_name: str) -> ModerationResult:
     if _matches_any(_JAILBREAK_PATTERNS, text):
         return ModerationResult(
             category="jailbreak",
             short_circuit_reply=(
-                "I'm just here to talk about Saad's professional background — I can't "
+                f"I'm just here to talk about {owner_name}'s professional background — I can't "
                 "change how I behave or share internal instructions. Happy to tell you "
                 "about his experience, skills, or projects though!"
             ),
@@ -67,14 +67,14 @@ def classify_message(text: str) -> ModerationResult:
             category="abuse",
             short_circuit_reply=(
                 "I want to keep this conversation constructive — happy to help once "
-                "you're ready to chat about Saad's background."
+                f"you're ready to chat about {owner_name}'s background."
             ),
         )
     if _matches_any(_GREETING_PATTERNS, text):
         return ModerationResult(
             category="greeting",
             short_circuit_reply=(
-                "Hey! I'm Saad's personal AI representative. Ask me anything about his "
+                f"Hey! I'm {owner_name}'s personal AI representative. Ask me anything about his "
                 "experience, skills, projects, or how to get in touch."
             ),
         )
@@ -82,7 +82,8 @@ def classify_message(text: str) -> ModerationResult:
         return ModerationResult(
             category="thanks",
             short_circuit_reply=(
-                "You're welcome! Let me know if you'd like to know anything else about Saad."
+                "You're welcome! Let me know if you'd like to know anything else "
+                f"about {owner_name}."
             ),
         )
     if _looks_like_gibberish(text):
@@ -90,7 +91,7 @@ def classify_message(text: str) -> ModerationResult:
             category="gibberish",
             short_circuit_reply=(
                 "Sorry, I didn't quite catch that — could you rephrase? I'm happy to "
-                "answer anything about Saad."
+                f"answer anything about {owner_name}."
             ),
         )
     return ModerationResult(category="clean", short_circuit_reply=None)

@@ -43,9 +43,11 @@ class ChatService:
             settings.rate_limit_per_session_per_10min
         )
         self._ip_limiter = SlidingWindowRateLimiter(settings.rate_limit_per_ip_per_10min)
-        # Single-worker executor so a slow/hung LLM call can be bounded by
+        # Bounded worker pool so a slow/hung LLM call can be capped by
         # chat_flow_timeout_seconds without blocking the caller's thread
-        # indefinitely (CrewAI's flow.kickoff() is a blocking call).
+        # indefinitely (CrewAI's flow.kickoff() is a blocking call). Sized at
+        # 4 to give a little headroom under concurrent traffic before calls
+        # start queueing behind each other.
         self._flow_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="chat-flow")
 
     def check_rate_limits(self, session_id: str, client_ip: str) -> None:
@@ -61,7 +63,7 @@ class ChatService:
         if len(trimmed) > self._settings.chat_max_message_length:
             raise ValidationAppError("message exceeds the maximum allowed length")
 
-        moderation = classify_message(trimmed)
+        moderation = classify_message(trimmed, self._settings.agent_owner_name)
         if moderation.short_circuit_reply is not None:
             self._store.save_message(session_id, "user", trimmed)
             assistant_msg = self._store.save_message(

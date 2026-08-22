@@ -5,10 +5,10 @@ from app.knowledge.loader import load_all_documents
 
 @tool("search_knowledge_base")
 def search_knowledge_base(query: str) -> str:
-    """Searches Saad's personal/professional knowledge base (profile, career
+    """Searches the personal/professional knowledge base (profile, career
     history, education, projects, skills) and returns the documents relevant
     to the query. Always use this before answering a factual question about
-    Saad — never answer from memory alone.
+    the person this agent represents — never answer from memory alone.
 
     Args:
         query: A short description of what the user is asking about,
