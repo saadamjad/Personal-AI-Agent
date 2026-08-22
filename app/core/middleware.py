@@ -45,3 +45,15 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
                 content=error_body("Request body exceeds the allowed size."),
             )
         return await call_next(request)
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Baseline defense-in-depth headers. This is a pure JSON API (no HTML
+    responses), so the actual risk these mitigate is low, but they're free
+    and standard practice for anything public."""
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "no-referrer-when-downgrade"
+        return response

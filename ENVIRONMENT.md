@@ -7,6 +7,8 @@ invalid combinations at startup). Copy `.env.example` to `.env` for local dev.
 |---|---|---|
 | `ENVIRONMENT` | `development` | `development` or `production` |
 | `PORT` | `8000` | Railway overrides this automatically — don't hardcode |
+| `AGENT_OWNER_NAME` | `Saad` | Who the agent represents — used in the system prompt and the fallback reply. Change this (and `app/knowledge/*`) to make this your own agent |
+| `AGENT_CONTACT_EMAIL` | *(empty)* | Shown in the fallback reply when the LLM is unreachable/unconfigured. Omit to leave that sentence out entirely |
 | `CREWAI_DISABLE_TELEMETRY` | `true` | Stops CrewAI's import-time network call to telemetry.crewai.com |
 | `OTEL_SDK_DISABLED` | `true` | Same purpose, belt-and-suspenders with the above |
 | `OPENAI_API_KEY` | *(empty)* | Set this or `ANTHROPIC_API_KEY` |

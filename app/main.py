@@ -15,7 +15,11 @@ from app.api.v1.routes_health import router as health_router
 from app.core.config import get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
-from app.core.middleware import BodySizeLimitMiddleware, RequestIdMiddleware
+from app.core.middleware import (
+    BodySizeLimitMiddleware,
+    RequestIdMiddleware,
+    SecurityHeadersMiddleware,
+)
 
 
 def create_app() -> FastAPI:
@@ -31,6 +35,7 @@ def create_app() -> FastAPI:
     # failure instead of surfacing the actual 413. Add in inner-to-outer order.
     app.add_middleware(BodySizeLimitMiddleware)
     app.add_middleware(RequestIdMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,

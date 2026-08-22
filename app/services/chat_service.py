@@ -23,16 +23,22 @@ class ChatTurnResult:
 
 logger = get_logger(__name__)
 
-_FALLBACK_REPLY = (
-    "I'm having trouble reaching my knowledge system right now. In the meantime, you can "
-    "reach Saad directly at saad.amjad434@gmail.com or find him on LinkedIn."
-)
+
+def _build_fallback_reply(settings: Settings) -> str:
+    contact = (
+        f" In the meantime, you can reach {settings.agent_owner_name} directly at "
+        f"{settings.agent_contact_email}."
+        if settings.agent_contact_email
+        else ""
+    )
+    return f"I'm having trouble reaching my knowledge system right now.{contact}"
 
 
 class ChatService:
     def __init__(self, settings: Settings, store: ConversationStore) -> None:
         self._settings = settings
         self._store = store
+        self._fallback_reply = _build_fallback_reply(settings)
         self._session_limiter = SlidingWindowRateLimiter(
             settings.rate_limit_per_session_per_10min
         )
@@ -78,7 +84,7 @@ class ChatService:
                 "llm_fallback",
                 extra={"llm_configured": self._settings.llm_configured, "session_id": session_id},
             )
-            reply = _FALLBACK_REPLY
+            reply = self._fallback_reply
             simulated = True
         else:
             reply = self._run_flow_with_timeout(session_id, trimmed, history_text)
