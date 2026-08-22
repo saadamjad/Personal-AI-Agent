@@ -17,7 +17,10 @@ def build_qa_task(agent: Agent) -> Task:
         description=TASK_DESCRIPTION,
         expected_output=(
             "A warm, concise, accurate reply to the visitor — grounded in the knowledge "
-            "base, staying within scope, 1-3 sentences unless a full summary was requested."
+            "base, staying within scope, 1-3 sentences unless a full summary or a list "
+            "of items was requested. Plain text only: no markdown (no **bold**, no "
+            "bullet/dash lists, no headers). For multi-item answers, one plain line "
+            "per item, no per-item elaboration."
         ),
         agent=agent,
     )
