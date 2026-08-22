@@ -1,7 +1,7 @@
 from crewai import LLM, Agent
 
 from app.core.config import Settings
-from app.prompts.system_prompt import QA_AGENT_BACKSTORY, QA_AGENT_GOAL
+from app.prompts.system_prompt import build_qa_agent_backstory, build_qa_agent_goal
 from app.tools.knowledge_retriever_tool import search_knowledge_base
 
 
@@ -18,9 +18,9 @@ def build_llm(settings: Settings) -> LLM:
 
 def build_qa_agent(settings: Settings) -> Agent:
     return Agent(
-        role="Saad's Personal Representative",
-        goal=QA_AGENT_GOAL,
-        backstory=QA_AGENT_BACKSTORY,
+        role=f"{settings.agent_owner_name}'s Personal Representative",
+        goal=build_qa_agent_goal(settings.agent_owner_name),
+        backstory=build_qa_agent_backstory(settings.agent_owner_name),
         tools=[search_knowledge_base],
         llm=build_llm(settings),
         verbose=False,

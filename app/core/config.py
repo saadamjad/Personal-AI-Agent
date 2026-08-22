@@ -11,6 +11,12 @@ class Settings(BaseSettings):
     environment: Literal["development", "production"] = "development"
     port: int = 8000
 
+    # Identity — who the agent represents. Drives the system prompt and the
+    # fallback reply shown when the LLM is unreachable/unconfigured. Change
+    # these (and app/knowledge/*) to turn this into your own agent.
+    agent_owner_name: str = "Saad"
+    agent_contact_email: str | None = None
+
     # LLM provider
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
@@ -34,7 +40,13 @@ class Settings(BaseSettings):
     # Storage
     database_path: str = "./data/conversations.db"
 
-    @field_validator("openai_api_key", "anthropic_api_key", "chat_llm_provider", mode="before")
+    @field_validator(
+        "openai_api_key",
+        "anthropic_api_key",
+        "chat_llm_provider",
+        "agent_contact_email",
+        mode="before",
+    )
     @classmethod
     def _blank_to_none(cls, v: str | None) -> str | None:
         return v or None
