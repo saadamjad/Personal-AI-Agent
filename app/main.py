@@ -26,7 +26,7 @@ def create_app() -> FastAPI:
     configure_logging()
     settings = get_settings()
 
-    app = FastAPI(title="Portfolio Agent", version="0.1.0")
+    app = FastAPI(title="Personal Assistant", version="0.1.0")
 
     # Middleware order matters: Starlette wraps the LAST-added middleware as
     # OUTERMOST. CORS must be outermost so its headers land on every response,

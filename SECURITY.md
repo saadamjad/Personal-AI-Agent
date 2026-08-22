@@ -1,6 +1,6 @@
 # Security Model
 
-This is a public-facing service — anyone visiting the portfolio site can talk to it.
+This is a public-facing service — anyone visiting the owner's site can talk to it.
 Treat it as production, not a toy.
 
 ## Prompt injection
@@ -67,7 +67,7 @@ error `code` is always in the server-side log line for cross-referencing.
 ## CORS
 
 Locked to explicit origins via `CORS_ALLOWED_ORIGINS` (comma-separated) — no wildcard.
-Set this to the production portfolio domain in Railway; keep `localhost` origins out
+Set this to the production website domain in Railway; keep `localhost` origins out
 of the production env var.
 
 **CORS is not authentication.** It only stops a *browser* from letting JavaScript on
@@ -114,7 +114,7 @@ conversation-adjacent data to a third party without explicit opt-in.
   still bounded by the per-IP limiter and, more importantly, the global daily LLM-call
   budget (300/day), which applies regardless of how many session IDs are cycled. A real
   fix would need session issuance/auth, which is disproportionate to this service's
-  threat model at personal-portfolio scale.
+  threat model at personal-assistant scale.
 - No WAF/bot-detection layer in front of the service (relies on rate limiting alone).
 - No authenticated admin surface exists (`CHAT_ADMIN_SECRET` and the old "teach" flow
   were deliberately dropped, not ported — see git history of the old repo).

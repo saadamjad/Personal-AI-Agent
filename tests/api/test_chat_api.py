@@ -4,6 +4,8 @@ from unittest.mock import patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.flows.chat_flow import ChatFlowResult
+
 
 @pytest.fixture
 def app_client(tmp_path, monkeypatch):
@@ -36,7 +38,10 @@ async def test_chat_happy_path_uses_camelcase_wire_format(app_client) -> None:
     {reply, messageId, simulated} back — the wire format must match that
     exactly, not Python's snake_case, or the chat widget breaks entirely."""
     session_id = str(uuid.uuid4())
-    with patch("app.services.chat_service.run_chat_flow", return_value="Saad is a great engineer."):
+    with patch(
+        "app.services.chat_service.run_chat_flow",
+        return_value=ChatFlowResult(reply="Saad is a great engineer."),
+    ):
         async with app_client as client:
             resp = await client.post(
                 "/api/v1/chat", json={"sessionId": session_id, "message": "Tell me about Saad"}
@@ -54,7 +59,10 @@ async def test_chat_happy_path_uses_camelcase_wire_format(app_client) -> None:
 
 async def test_chat_history_uses_camelcase_and_id_timestamp_fields(app_client) -> None:
     session_id = str(uuid.uuid4())
-    with patch("app.services.chat_service.run_chat_flow", return_value="reply text"):
+    with patch(
+        "app.services.chat_service.run_chat_flow",
+        return_value=ChatFlowResult(reply="reply text"),
+    ):
         async with app_client as client:
             await client.post(
                 "/api/v1/chat", json={"sessionId": session_id, "message": "hello there question"}
@@ -139,7 +147,10 @@ async def test_rate_limit_error_uses_flat_error_string(app_client, monkeypatch) 
     deps.get_chat_service.cache_clear()
 
     session_id = str(uuid.uuid4())
-    with patch("app.services.chat_service.run_chat_flow", return_value="ok"):
+    with patch(
+        "app.services.chat_service.run_chat_flow",
+        return_value=ChatFlowResult(reply="ok"),
+    ):
         async with app_client as client:
             resp = await client.post(
                 "/api/v1/chat", json={"sessionId": session_id, "message": "hi there"}

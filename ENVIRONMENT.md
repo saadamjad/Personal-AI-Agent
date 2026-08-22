@@ -24,6 +24,11 @@ invalid combinations at startup). Copy `.env.example` to `.env` for local dev.
 | `RATE_LIMIT_PER_IP_PER_10MIN` | `40` | |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | Comma-separated. **Set to the production domain in Railway — no wildcard.** |
 | `DATABASE_PATH` | `./data/conversations.db` | Point at a Railway volume mount in production |
+| `ZIZKADB_ENABLED` | `false` | Set `true` to send turn events to ZizkaDB. Requires `ZIZKADB_HOST` or `ZIZKADB_API_KEY` |
+| `ZIZKADB_HOST` | *(empty)* | Self-hosted ZizkaDB API URL. This agent is `:8000` — use another port locally (or cloud) |
+| `ZIZKADB_API_KEY` | *(empty)* | Cloud / remote key (`zizkadb_live_...`). Localhost can omit (SDK uses the dev key) |
+| `ZIZKADB_AGENT` | `personal-assistant` | Must match the agent name in the ZizkaDB dashboard |
+| `ZIZKADB_TIMEOUT_SECONDS` | `3` | Per-request timeout for ZizkaDB ingest. Keep well below `CHAT_FLOW_TIMEOUT_SECONDS` |
 
 ## Never set these to real values in `.env.example`
 

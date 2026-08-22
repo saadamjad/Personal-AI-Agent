@@ -3,6 +3,7 @@ from functools import lru_cache
 from fastapi import Request
 
 from app.core.config import get_settings
+from app.observability import build_tracer
 from app.services.chat_service import ChatService
 from app.storage.conversation_store import ConversationStore
 
@@ -11,7 +12,7 @@ from app.storage.conversation_store import ConversationStore
 def get_chat_service() -> ChatService:
     settings = get_settings()
     store = ConversationStore(settings)
-    return ChatService(settings, store)
+    return ChatService(settings, store, build_tracer(settings))
 
 
 def get_client_ip(request: Request) -> str:

@@ -40,16 +40,64 @@ class Settings(BaseSettings):
     # Storage
     database_path: str = "./data/conversations.db"
 
+    # ZizkaDB observability — off by default so CI/tests need no live instance.
+    zizkadb_enabled: bool = False
+    zizkadb_host: str | None = None
+    zizkadb_api_key: str | None = None
+    zizkadb_agent: str = Field(default="personal-assistant", min_length=1, max_length=255)
+    zizkadb_timeout_seconds: float = Field(default=3.0, gt=0, le=15)
+
     @field_validator(
         "openai_api_key",
         "anthropic_api_key",
         "chat_llm_provider",
         "agent_contact_email",
+        "zizkadb_host",
+        "zizkadb_api_key",
         mode="before",
     )
     @classmethod
     def _blank_to_none(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        if isinstance(v, str):
+            v = v.strip()
         return v or None
+
+    @field_validator("zizkadb_agent", mode="before")
+    @classmethod
+    def _strip_agent_name(cls, v: object) -> object:
+        if isinstance(v, str):
+            stripped = v.strip()
+            return stripped or "personal-assistant"
+        return v
+
+    @field_validator("zizkadb_timeout_seconds", mode="before")
+    @classmethod
+    def _blank_timeout_to_default(cls, v: object) -> object:
+        if v is None or v == "":
+            return 3.0
+        return v
+
+    @field_validator("zizkadb_host")
+    @classmethod
+    def _validate_zizkadb_host(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        if not v.startswith(("http://", "https://")):
+            raise ValueError("ZIZKADB_HOST must be an http(s) URL")
+        return v.rstrip("/")
+
+    @field_validator("zizkadb_api_key")
+    @classmethod
+    def _validate_zizkadb_api_key(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        if not v.startswith(("zizkadb_live_", "zizkadb_dev_", "agdb_live_", "agdb_")):
+            raise ValueError(
+                "ZIZKADB_API_KEY must be a ZizkaDB key (zizkadb_live_... or zizkadb_dev_...)"
+            )
+        return v
 
     @model_validator(mode="after")
     def _validate_provider_config(self) -> "Settings":
@@ -76,6 +124,10 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_allowed_origins.split(",") if o.strip()]
+
+    @property
+    def zizkadb_ready(self) -> bool:
+        return self.zizkadb_enabled and bool(self.zizkadb_host or self.zizkadb_api_key)
 
 
 @lru_cache

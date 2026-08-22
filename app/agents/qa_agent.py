@@ -1,3 +1,5 @@
+from typing import Any
+
 from crewai import LLM, Agent
 
 from app.core.config import Settings
@@ -16,12 +18,12 @@ def build_llm(settings: Settings) -> LLM:
     raise ValueError("No LLM provider configured — set OPENAI_API_KEY or ANTHROPIC_API_KEY")
 
 
-def build_qa_agent(settings: Settings) -> Agent:
+def build_qa_agent(settings: Settings, tools: list[Any] | None = None) -> Agent:
     return Agent(
-        role=f"{settings.agent_owner_name}'s Personal Representative",
+        role=f"{settings.agent_owner_name}'s Personal Assistant",
         goal=build_qa_agent_goal(settings.agent_owner_name),
         backstory=build_qa_agent_backstory(settings.agent_owner_name),
-        tools=[search_knowledge_base],
+        tools=tools if tools is not None else [search_knowledge_base],
         llm=build_llm(settings),
         verbose=False,
         max_iter=6,

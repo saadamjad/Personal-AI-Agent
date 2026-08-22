@@ -41,7 +41,10 @@ mypy app
 
 - Multi-agent crew (router / lead-qualification agents)
 - Meeting scheduling (Google Meet/Zoom)
-- ZizkaDB analytics integration
 
 These are documented as explicit future phases in the project's original planning —
 don't build them speculatively without checking current priorities first.
+
+ZizkaDB turn logging lives in `app/observability/`. Keep chat callers on the
+`AgentTracer` protocol — do not import `zizkadb` from `api/`, `services/`, or
+`flows/` except through that package.

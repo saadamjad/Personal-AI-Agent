@@ -20,6 +20,11 @@ search_knowledge_base tool (app/tools/knowledge_retriever_tool.py)
         |
         v
 Knowledge files (app/knowledge/*.md, *.yaml)
+
+ChatService / ChatFlow also call AgentTracer (app/observability/)
+        |
+        v
+ZizkaDB  -- best-effort; a down ingest path never fails the chat reply
 ```
 
 ## Why this shape
@@ -39,6 +44,9 @@ Knowledge files (app/knowledge/*.md, *.yaml)
   `knowledge/loader.py` loads everything into memory and the retriever tool does simple
   keyword filtering with a safe fallback to "return everything" rather than risking a
   missed embedding match causing a false "I don't know."
+- **Observability is a side path.** `app/observability/` exposes an `AgentTracer`
+  protocol. `ChatService` and `ChatFlow` never import the ZizkaDB SDK. Event ingest
+  is best-effort and off unless `ZIZKADB_ENABLED` plus a host or API key is set.
 
 ## Request lifecycle
 
@@ -94,6 +102,7 @@ check-then-record atomic across concurrent request-handling threads.
 - Multi-agent crew (router / knowledge / lead-qualification agents) — `chat_flow.py`
   is structured so this is additive later.
 - Meeting scheduling (Google Meet/Zoom).
-- ZizkaDB analytics/event logging.
+- Calling ZizkaDB `why()` / `baseline()` / `search()` on the chat request path —
+  those are dashboard/read APIs; the agent only writes events.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to extend the agent/knowledge base.

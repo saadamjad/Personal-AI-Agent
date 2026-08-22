@@ -3,27 +3,26 @@
 [![CI](https://github.com/saadamjad/Personal-AI-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/saadamjad/Personal-AI-Agent/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A standalone AI representative for a personal portfolio website — answers questions from
-recruiters, hiring managers, and clients about your professional background, grounded in
-a plain-text knowledge base you write yourself. Built with **FastAPI** + **CrewAI**,
-deployable to **Railway** (or any Docker host), and talked to over HTTPS by a website's
-chat widget.
+A personal assistant agent that can act on behalf of any person or owner — answers
+questions about their background, grounded in a plain-text knowledge base they write
+themselves. Built with **FastAPI** + **CrewAI**, deployable to **Railway** (or any
+Docker host), and talked to over HTTPS by a website's chat widget.
 
 This repo runs [saadstack.com](https://saadstack.com)'s chat agent today, but it's not
 tied to that identity — clone it, swap in your own background, and it's yours.
 
 ## Why this exists
 
-A portfolio site is a static pitch. This turns it into something a visitor can actually
-question — "does he have React Native experience?", "is he open to contract work?" — and
-get an accurate, on-brand answer sourced only from facts you've written down, not
+A static site is a one-way pitch. This turns it into something a visitor can actually
+question — "do they have React Native experience?", "are they open to contract work?" —
+and get an accurate, on-brand answer sourced only from facts you've written down, not
 something the model improvised.
 
 ## Who it's for
 
-Any developer who wants a small, self-hosted "ask me anything about my career" agent on
-their own site, without wiring up a vector database, a SaaS chatbot platform, or handing
-an LLM provider your API key from the browser.
+Anyone who wants a small, self-hosted personal assistant that can speak on their behalf,
+without wiring up a vector database, a SaaS chatbot platform, or handing an LLM provider
+your API key from the browser.
 
 ## Architecture
 

@@ -31,4 +31,4 @@ jobs:
           CHAT_LLM_PROVIDER: openai
 
       - name: Build check (docker)
-        run: docker build -t portfolio-agent:ci .
+        run: docker build -t personal-assistant:ci .

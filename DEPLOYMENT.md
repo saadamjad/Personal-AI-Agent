@@ -11,9 +11,12 @@
 4. Set environment variables (Railway dashboard → Variables) — see
    [ENVIRONMENT.md](ENVIRONMENT.md) for the full list. At minimum:
    - `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
-   - `CORS_ALLOWED_ORIGINS` — the production portfolio domain, e.g.
+   - `CORS_ALLOWED_ORIGINS` — the production website domain, e.g.
      `https://saadstack.com`
    - `ENVIRONMENT=production`
+   - Optional ZizkaDB (managed cloud): `ZIZKADB_ENABLED=true`,
+     `ZIZKADB_API_KEY`, and `ZIZKADB_AGENT=personal-assistant` — leave
+     `ZIZKADB_HOST` unset. The dashboard agent name must match exactly.
 5. Railway injects `$PORT` automatically — the Dockerfile's `CMD` already respects it
    (`uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}`). Don't hardcode a port.
 6. Health check: Railway pings `/healthz` per `railway.json`'s `healthcheckPath`.
@@ -35,7 +38,7 @@ curl -X POST https://<your-railway-url>/api/v1/chat \
 
 ## Connecting the website
 
-In `apps/web` (the portfolio site repo), set:
+In `apps/web` (the website repo), set:
 
 ```
 VITE_CHAT_API_BASE=https://<your-railway-url>/api/v1/chat

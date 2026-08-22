@@ -50,3 +50,66 @@ def test_agent_owner_name_rejects_blank() -> None:
 def test_agent_owner_name_accepts_custom_value() -> None:
     settings = Settings(agent_owner_name="Alex", openai_api_key="sk-test")
     assert settings.agent_owner_name == "Alex"
+
+
+def test_zizkadb_ready_requires_enabled_and_host_or_key() -> None:
+    assert Settings(openai_api_key="sk-test").zizkadb_ready is False
+    assert Settings(openai_api_key="sk-test", zizkadb_enabled=True).zizkadb_ready is False
+    assert (
+        Settings(
+            openai_api_key="sk-test",
+            zizkadb_enabled=True,
+            zizkadb_host="http://localhost:9000",
+        ).zizkadb_ready
+        is True
+    )
+    assert (
+        Settings(
+            openai_api_key="sk-test",
+            zizkadb_enabled=True,
+            zizkadb_api_key="zizkadb_live_test",
+        ).zizkadb_ready
+        is True
+    )
+
+
+def test_zizkadb_host_must_be_http_url() -> None:
+    with pytest.raises(ValidationError):
+        Settings(openai_api_key="sk-test", zizkadb_host="localhost:9000")
+
+
+def test_zizkadb_host_rejects_slash_slash_comment_values() -> None:
+    # dotenv does not treat // as a comment. A copied .env.example with
+    # ZIZKADB_HOST= // note must fail closed, not start with a junk URL.
+    with pytest.raises(ValidationError):
+        Settings(openai_api_key="sk-test", zizkadb_host="// localhost:9000")
+
+
+def test_zizkadb_api_key_must_use_known_prefix() -> None:
+    with pytest.raises(ValidationError):
+        Settings(openai_api_key="sk-test", zizkadb_api_key="sk-wrong")
+
+
+def test_zizkadb_agent_strips_whitespace() -> None:
+    settings = Settings(openai_api_key="sk-test", zizkadb_agent="  personal-assistant  ")
+    assert settings.zizkadb_agent == "personal-assistant"
+
+
+def test_zizkadb_timeout_must_be_positive() -> None:
+    with pytest.raises(ValidationError):
+        Settings(openai_api_key="sk-test", zizkadb_timeout_seconds=0)
+
+
+def test_optional_zizkadb_blanks_are_treated_as_unset() -> None:
+    settings = Settings(
+        openai_api_key="sk-test",
+        zizkadb_host="   ",
+        zizkadb_api_key="",
+        zizkadb_agent="  ",
+        zizkadb_timeout_seconds="",  # type: ignore[arg-type]
+    )
+    assert settings.zizkadb_host is None
+    assert settings.zizkadb_api_key is None
+    assert settings.zizkadb_agent == "personal-assistant"
+    assert settings.zizkadb_timeout_seconds == 3.0
+    assert settings.zizkadb_ready is False

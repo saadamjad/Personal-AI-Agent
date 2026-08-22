@@ -6,7 +6,14 @@ from pythonjsonlogger import jsonlogger
 
 request_id_ctx: ContextVar[str | None] = ContextVar("request_id", default=None)
 
-_REDACT_KEYS = {"api_key", "openai_api_key", "anthropic_api_key", "authorization", "password"}
+_REDACT_KEYS = {
+    "api_key",
+    "openai_api_key",
+    "anthropic_api_key",
+    "zizkadb_api_key",
+    "authorization",
+    "password",
+}
 
 
 class _RequestIdFilter(logging.Filter):
